@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exam Lane Builder</title>
+    <style>
+      :root {
+        --bg: #f6f8fb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --brand: #2654c5;
+        --brand-soft: #e9efff;
+        --border: #e5e7eb;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      }
+
+      .container {
+        width: min(1200px, 92vw);
+        margin: 2rem auto 3rem;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+      }
+
+      .subtitle {
+        color: var(--muted);
+        margin: 0 0 1.4rem;
+        max-width: 75ch;
+      }
+
+      .topbar {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 1.25rem;
+      }
+
+      .pill {
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: 999px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 1rem;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .category {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.9rem;
+      }
+
+      .category h2 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .category small {
+        color: var(--muted);
+      }
+
+      .options {
+        margin-top: 0.7rem;
+        display: grid;
+        gap: 0.55rem;
+      }
+
+      .option {
+        display: grid;
+        grid-template-columns: 68px 1fr auto;
+        gap: 0.65rem;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.45rem;
+        cursor: pointer;
+      }
+
+      .option input { margin: 0; }
+
+      .option img {
+        width: 68px;
+        height: 68px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #f3f4f6;
+      }
+
+      .name {
+        font-weight: 600;
+        font-size: 0.94rem;
+      }
+
+      .meta {
+        font-size: 0.83rem;
+        color: var(--muted);
+      }
+
+      .price {
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .summary {
+        position: sticky;
+        top: 1rem;
+        align-self: start;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1rem;
+      }
+
+      .summary h3 {
+        margin: 0 0 0.6rem;
+      }
+
+      .list {
+        display: grid;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        font-size: 0.92rem;
+      }
+
+      .row .label { color: var(--muted); }
+      .totals {
+        border-top: 1px solid var(--border);
+        padding-top: 0.8rem;
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .btn {
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        padding: 0.72rem 1rem;
+        background: var(--brand);
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 0.8rem;
+      }
+
+      .note {
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin: 0;
+      }
+
+      @media (max-width: 980px) {
+        .layout { grid-template-columns: 1fr; }
+        .cards { grid-template-columns: 1fr; }
+        .summary { position: static; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Exam Lane Builder</h1>
+      <p class="subtitle">
+        Select one item from each category to build your lane package. The total updates live and applies each product's discount.
+      </p>
+
+      <div class="topbar" id="categoryPills"></div>
+
+      <div class="layout">
+        <main class="cards" id="cards"></main>
+
+        <aside class="summary">
+          <button class="btn" id="calculateBtn">Calculate Total</button>
+          <h3>Selected Items</h3>
+          <div class="list" id="selectedList"></div>
+          <div class="totals">
+            <div class="row"><span class="label">Subtotal</span> <strong id="subtotal">$0</strong></div>
+            <div class="row"><span class="label">Discount savings</span> <strong id="savings">-$0</strong></div>
+            <div class="row"><span class="label">Total</span> <strong id="total">$0</strong></div>
+          </div>
+          <p class="note">Tip: replace or add products in the <code>laneCatalog</code> object inside this file.</p>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const laneCatalog = {
+        Chair: [
+          { name: "Envi S2-TC", price: 6875, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2025/03/Envi-S2-TC-Tilt-Chair.webp" },
+          { name: "Envi S2-AR", price: 6490, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2025/03/Envi-S2-AR-Automatic-Recline.webp" },
+          { name: "Envi S2-MC", price: 5225, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2025/03/Envi-S2-MC-Manual-Chair.webp" },
+          { name: "Envi S2-MPC", price: 3740, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2025/03/Envi-S2-MPC-Micro-Procedure.webp" }
+        ],
+        Stand: [
+          { name: "Envi S2-S", price: 6545, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2025/03/Envi-S2-S.webp" },
+          { name: "Envi Switch", price: 4510, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2024/06/Counterbalanced-Arm-Switch-1.png" }
+        ],
+        "Slit Lamp": [
+          { name: "Envi HSL-20", price: 4400, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2024/07/ENVI-HSL-20-NEW.png" },
+          { name: "Envi HSL-50", price: 5850, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2024/07/ENVI-HSL-50-NEW.png" },
+          { name: "Envi ZSL-50", price: 5200, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2024/07/ENVI-ZSL-50-NEW.png" },
+          { name: "ENVI Enview", price: 14500, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2024/07/ENVI-ENVIEW-NEW.png" }
+        ],
+        Tonometer: [
+          { name: "Envi R-900 Tonometer", price: 1400, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2025/03/Envi-R-900-Tonometer.webp" }
+        ],
+        Phoropter: [
+          { name: "Envi MP-125 / MP-135", price: 4150, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2025/03/Envi-Phoropter.webp" }
+        ],
+        "Acuity Chart": [
+          { name: "Envi Elite Acuity Chart", price: 1600, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2024/07/2-Smart-Chart-1.png" }
+        ],
+        Stool: [
+          { name: "Envi S200WB", price: 499, discount: 0.1, image: "https://envieye.com/wp-content/uploads/2023/12/ENVI-500X500-REVISED-18.png" }
+        ]
+      };
+
+      const cards = document.querySelector("#cards");
+      const selectedList = document.querySelector("#selectedList");
+      const subtotal = document.querySelector("#subtotal");
+      const savings = document.querySelector("#savings");
+      const total = document.querySelector("#total");
+      const categoryPills = document.querySelector("#categoryPills");
+      const calculateBtn = document.querySelector("#calculateBtn");
+
+      const selections = {};
+
+      const usd = (value) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+
+      function createBuilder() {
+        Object.entries(laneCatalog).forEach(([category, products], catIndex) => {
+          const categoryCard = document.createElement("section");
+          categoryCard.className = "category";
+          categoryCard.innerHTML = `<h2>${category}</h2><small>Select one option</small><div class="options"></div>`;
+          const options = categoryCard.querySelector(".options");
+
+          const pill = document.createElement("span");
+          pill.className = "pill";
+          pill.textContent = `${category}: ${products.length} option${products.length > 1 ? "s" : ""}`;
+          categoryPills.appendChild(pill);
+
+          products.forEach((product, productIndex) => {
+            const id = `${category.toLowerCase().replace(/\s+/g, "-")}-${productIndex}`;
+            const label = document.createElement("label");
+            label.className = "option";
+            label.innerHTML = `
+              <img src="${product.image}" alt="${product.name}" loading="lazy" />
+              <div>
+                <div class="name">${product.name}</div>
+                <div class="meta">Discount ${Math.round(product.discount * 100)}%</div>
+              </div>
+              <div>
+                <input type="radio" id="${id}" name="${category}" ${productIndex === 0 ? "checked" : ""} />
+                <div class="price">${usd(product.price)}</div>
+              </div>
+            `;
+
+            const radio = label.querySelector("input");
+            radio.addEventListener("change", () => {
+              selections[category] = product;
+              renderSelection();
+            });
+
+            options.appendChild(label);
+
+            if (productIndex === 0 && catIndex >= 0) selections[category] = product;
+          });
+
+          cards.appendChild(categoryCard);
+        });
+      }
+
+      function renderSelection() {
+        selectedList.innerHTML = "";
+        let runningSubtotal = 0;
+        let runningSavings = 0;
+
+        Object.entries(selections).forEach(([category, product]) => {
+          runningSubtotal += product.price;
+          runningSavings += product.price * product.discount;
+
+          const row = document.createElement("div");
+          row.className = "row";
+          row.innerHTML = `<span class="label">${category}: ${product.name}</span><strong>${usd(product.price)}</strong>`;
+          selectedList.appendChild(row);
+        });
+
+        subtotal.textContent = usd(runningSubtotal);
+        savings.textContent = `-${usd(runningSavings)}`;
+        total.textContent = usd(runningSubtotal - runningSavings);
+      }
+
+      calculateBtn.addEventListener("click", renderSelection);
+
+      createBuilder();
+      renderSelection();
+    </script>
+  </body>
+</html>
